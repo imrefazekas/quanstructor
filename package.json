@@ -1,0 +1,33 @@
+{
+	"name": "quanstructor",
+	"version": "0.2.0",
+	"description": "Exceptionally powerful object model builder for complex architectures",
+	"keywords": [
+		"object-modeling",
+		"prototype",
+		"domain model"
+	],
+	"homepage": "https://github.com/imrefazekas/quanstructor",
+	"repository": {
+		"type": "git",
+		"url": "git://github.com/imrefazekas/quanstructor.git"
+	},
+	"bugs": {
+		"url": "http://github.com/imrefazekas/quanstructor/issues"
+	},
+	"author": {
+		"name": "Imre Fazekas",
+		"email": "mail@imrefazekas.me"
+	},
+	"license": "MIT",
+	"main": "./Quanstructor.js",
+	"dependencies": {
+		"assign.js": "^2.8.10",
+		"isa.js": "^2.2.10",
+		"vindication.js": "^4.16.5"
+	},
+	"devDependencies": {},
+	"engines": {
+		"node": ">= 10.0.0"
+	}
+}

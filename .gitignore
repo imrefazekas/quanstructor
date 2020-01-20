@@ -1,0 +1,11 @@
+.DS_Store
+node_modules/
+docs/
+www/
+forever.*
+*.log
+*.zip
+sf
+upload/
+*.dummy.js
+package-lock.json
