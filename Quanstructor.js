@@ -9,11 +9,11 @@ let assign = Object.assign
 
 const QUALITY_SPACE = ''
 
+const PRIMUS = 'PRIMUS'
+
 const DEFINITIONS = { }
 
 let PROPERTIES_TO_IGNORE = [ '_allowNull', '_reform', '_preserve', '_derivations' ]
-
-let _preserve, _reform
 
 function Quanstructor (name, specs = {}, ...derivations) {
 	this.assigner = new Assigner()
@@ -22,12 +22,12 @@ function Quanstructor (name, specs = {}, ...derivations) {
 
 	this.projections = { complete: [] }
 
-	this._derivations = derivations
+	this._derivations = [PRIMUS]
+	this._derivations.push( ...derivations )
 
 	this.specs = { }
 
-	this.expand( ...derivations )
-
+	this.expand( ...this._derivations )
 	this.expand( specs )
 
 	this._tune()
@@ -129,12 +129,11 @@ assign( quanstructor, {
 		}
 
 		if ( !options.ignorePreserve ) {
-			if ( _preserve ) await _preserve( res, options )
-
 			for ( let sup of this._derivations )
 				if ( DEFINITIONS[ sup ] && DEFINITIONS[ sup ]._preserve )
-					await DEFINITIONS[ sup ]._preserve( res, options )
-			if ( this.specs._preserve ) await this.specs._preserve( res, options )
+					await DEFINITIONS[ sup ]._preserve( res, projection, options )
+			if ( this.specs._preserve )
+				await this.specs._preserve( res, projection, options )
 		}
 
 		if ( !options.ignoreValidation )
@@ -170,12 +169,10 @@ assign( quanstructor, {
 		}
 
 		if ( !options.ignoreReform ) {
-			if ( _reform ) await _reform( res, options )
-
 			for ( let sup of this._derivations )
 				if ( DEFINITIONS[ sup ] && DEFINITIONS[ sup ]._reform )
-					await DEFINITIONS[ sup ]._reform( res, options )
-			if ( this.specs._reform ) await this.specs._reform( res, options )
+					await DEFINITIONS[ sup ]._reform( res, projection, options )
+			if ( this.specs._reform ) await this.specs._reform( res, projection, options )
 		}
 
 		return res
@@ -196,12 +193,10 @@ assign( quanstructor, {
 		}
 
 		if ( !options.ignoreReform ) {
-			if ( _reform ) await _reform( res, options )
-
 			for ( let sup of this._derivations )
 				if ( DEFINITIONS[ sup ] && DEFINITIONS[ sup ]._reform )
-					await DEFINITIONS[ sup ]._reform( res, options )
-			if ( this.specs._reform ) await this.specs._reform( res, options )
+					await DEFINITIONS[ sup ]._reform( res, projection, options )
+			if ( this.specs._reform ) await this.specs._reform( res, projection, options )
 		}
 
 		return res
@@ -211,13 +206,10 @@ assign( quanstructor, {
 module.exports = {
 	QUALITY_SPACE,
 	DEFINITIONS,
-	reform ( _fn ) {
-		_reform = _fn
+	addPrimus (specs = {}) {
+		DEFINITIONS[ PRIMUS ] = specs
 	},
-	preserve (_fn) {
-		_preserve = _fn
-	},
-	addProto (name, specs) {
+	addProto (name, specs = {}) {
 		DEFINITIONS[ name ] = specs
 	},
 	newQuanstructor (name, specs = {}, ...derivations) {

@@ -34,7 +34,7 @@ describe('Quastructor', function () {
 
 	describe('New Proto', function () {
 		it('Define Data', async function () {
-			let Absoluter = Quastructor.newAbsoluter( 'Person', {
+			let Absoluter = Quastructor.newQuanstructor( 'Person', {
 				passportID: { spaces: [ 'database', 'secret' ], validation: REQUIRED },
 				address: { space: SPACE_SUPP, default: { street: '', county: '', country: '', postal: '' }, validation: {
 					street: REQUIRED, county: REQUIRED, country: REQUIRED, postal: REQUIRED
@@ -52,7 +52,7 @@ describe('Quastructor', function () {
 			Absoluter.project( 'database', [ Quastructor.QUALITY_SPACE, 'database' ] )
 			console.log('-----' )
 			console.log( await Absoluter.build( PERSON_PROTO_DB, 'database' ) )
-			console.log( await Absoluter.derive( PERSON_PROTO_DB, 'database' ) )
+			console.log( await Absoluter.derive( PERSON_PROTO_DB, 'database', 'secret' ) )
 		} )
 	} )
 
