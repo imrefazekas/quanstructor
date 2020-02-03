@@ -54,6 +54,17 @@ describe('Quastructor', function () {
 			console.log( await Absoluter.build( PERSON_PROTO_DB, 'database' ) )
 			console.log( await Absoluter.derive( PERSON_PROTO_DB, 'database', 'secret' ) )
 		} )
+
+		it('Embed Data', async function () {
+			let Absoluter = Quastructor.newQuanstructor( 'Employee', {
+				employeeID: { validation: REQUIRED },
+				person: { space: SPACE_SUPP, Quanstructor: 'Person' }
+			} )
+			console.log( await Absoluter.build( {
+				employeeID: '121212',
+				person: PERSON_PROTO_DB
+			} ) )
+		} )
 	} )
 
 	after( async function () {
