@@ -106,8 +106,11 @@ assign( quanstructor, {
 		for (let prop in obj) {
 			if ( !this.specs[ prop ] ) continue
 
-			if ( this.specs[ prop ].Quanstructor )
-				return QUANSTRUCTORS[ this.specs[ prop ].Quanstructor ].validate( obj[prop] )
+			if ( this.specs[ prop ].Quanstructor ) {
+				return _.isArray( obj[ prop ] )
+					? obj[ prop ].map( (item) => { return QUANSTRUCTORS[ this.specs[ prop ].Quanstructor ].validate( item ) } )
+					: QUANSTRUCTORS[ this.specs[ prop ].Quanstructor ].validate( obj[prop] )
+			}
 
 			if ( !this.specs[ prop ].validation ) return
 
@@ -124,7 +127,9 @@ assign( quanstructor, {
 		let res = { }
 		for (let attrib of this.attributes) {
 			if ( this.specs[ attrib ].Quanstructor )
-				res[ attrib ] = await QUANSTRUCTORS[ this.specs[ attrib ].Quanstructor ].build( obj[ attrib ], projection, options )
+				res[ attrib ] = _.isArray( obj[ attrib ] ) ? await Promise.all(
+					obj[ attrib ].map( (item) => { return QUANSTRUCTORS[ this.specs[ attrib ].Quanstructor ].build( item, projection, options ) } )
+				) : await QUANSTRUCTORS[ this.specs[ attrib ].Quanstructor ].build( obj[ attrib ], projection, options )
 			else {
 				let value = obj[attrib] || ( this.specs[ attrib ].hasOwnProperty('default') ? this.assigner.cloneObject( this.specs[ attrib ].default ) : v.defaultValue( this.specs[ attrib ].validation ) )
 				if ( this.specs[ attrib ]._allowNull || defined(value) )
@@ -173,10 +178,12 @@ assign( quanstructor, {
 			if ( space && !res[ space ] ) res[ space ] = {}
 			let ref = !space ? res : res[ space ]
 			for (let attrib of this.views[ space ] ) {
-				if ( this.specs[ attrib ].Quanstructor )
-					res[ attrib ] = await QUANSTRUCTORS[ this.specs[ attrib ].Quanstructor ].proto( projection, options )
-				else {
-					let value = this.specs[ attrib ].hasOwnProperty('default') ? this.specs[ attrib ].default : v.defaultValue( this.specs[ attrib ].validation )
+				let value = this.specs[ attrib ].hasOwnProperty('default') ? this.specs[ attrib ].default : v.defaultValue( this.specs[ attrib ].validation )
+				if ( this.specs[ attrib ].Quanstructor ) {
+					res[ attrib ] = _.isArray( value )
+						? [ await QUANSTRUCTORS[ this.specs[ attrib ].Quanstructor ].proto( projection, options ) ]
+						: await QUANSTRUCTORS[ this.specs[ attrib ].Quanstructor ].proto( projection, options )
+				} else {
 					if ( this.specs[ attrib ]._allowNull || defined(value) )
 						ref[ attrib ] = value
 				}

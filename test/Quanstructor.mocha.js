@@ -58,11 +58,13 @@ describe('Quastructor', function () {
 		it('Embed Data', async function () {
 			let Absoluter = Quastructor.newQuanstructor( 'Employee', {
 				employeeID: { validation: REQUIRED },
-				person: { space: SPACE_SUPP, Quanstructor: 'Person' }
+				person: { space: SPACE_SUPP, Quanstructor: 'Person' },
+				people: { default: [], space: SPACE_SUPP, Quanstructor: 'Person' }
 			} )
 			console.log( await Absoluter.build( {
 				employeeID: '121212',
-				person: PERSON_PROTO_DB
+				person: PERSON_PROTO_DB,
+				people: [ PERSON_PROTO_DB ]
 			} ) )
 		} )
 	} )
