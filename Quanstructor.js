@@ -106,8 +106,8 @@ assign( quanstructor, {
 		for (let prop in obj) {
 			if ( !this.specs[ prop ] ) continue
 
-			if ( this.specs[ prop ].Quanstructor ) {
-				return _.isArray( obj[ prop ] )
+			if ( this.specs[ prop ].Quanstructor && obj[ prop ] ) {
+				_.isArray( obj[ prop ] )
 					? obj[ prop ].map( (item) => { return QUANSTRUCTORS[ this.specs[ prop ].Quanstructor ].validate( item ) } )
 					: QUANSTRUCTORS[ this.specs[ prop ].Quanstructor ].validate( obj[prop] )
 			}
@@ -124,36 +124,39 @@ assign( quanstructor, {
 		if ( !this.projections[projection] )
 			throw BaseErrors.InvalidProjection( { projection: projection } )
 
+		let self = this
 		let res = { }
 		for (let attrib of this.attributes) {
 			if ( this.specs[ attrib ].Quanstructor )
-				res[ attrib ] = _.isArray( obj[ attrib ] ) ? await Promise.all(
-					obj[ attrib ].map( (item) => { return QUANSTRUCTORS[ this.specs[ attrib ].Quanstructor ].build( item, projection, options ) } )
-				) : await QUANSTRUCTORS[ this.specs[ attrib ].Quanstructor ].build( obj[ attrib ], projection, options )
+				res[ attrib ] = !obj[ attrib ]
+					? await QUANSTRUCTORS[ self.specs[ attrib ].Quanstructor ].proto( projection, options )
+					: (_.isArray( obj[ attrib ] ) ? await Promise.all(
+						obj[ attrib ].map( (item) => { return QUANSTRUCTORS[ self.specs[ attrib ].Quanstructor ].build( item, projection, options ) } )
+					) : await QUANSTRUCTORS[ self.specs[ attrib ].Quanstructor ].build( obj[ attrib ], projection, options ))
 			else {
-				let value = obj[attrib] || ( this.specs[ attrib ].hasOwnProperty('default') ? this.assigner.cloneObject( this.specs[ attrib ].default ) : v.defaultValue( this.specs[ attrib ].validation ) )
-				if ( this.specs[ attrib ]._allowNull || defined(value) )
+				let value = obj[attrib] || ( self.specs[ attrib ].hasOwnProperty('default') ? self.assigner.cloneObject( self.specs[ attrib ].default ) : v.defaultValue( self.specs[ attrib ].validation ) )
+				if ( self.specs[ attrib ]._allowNull || defined(value) )
 					res[ attrib ] = value
 			}
 		}
-		for (let space of this.projections[ projection ] ) {
+		for (let space of self.projections[ projection ] ) {
 			if ( obj[ space ] )
-				for (let attrib of this.views[ space ] ) {
+				for (let attrib of self.views[ space ] ) {
 					if ( defined( obj[ space ][ attrib ] ) )
 						res[ attrib ] = obj[ space ][ attrib ]
 				}
 		}
 
 		if ( !options.ignorePreserve ) {
-			for ( let sup of this._derivations )
+			for ( let sup of self._derivations )
 				if ( DEFINITIONS[ sup ] && DEFINITIONS[ sup ]._preserve )
 					await DEFINITIONS[ sup ]._preserve( res, projection, options )
-			if ( this.specs._preserve )
-				await this.specs._preserve( res, projection, options )
+			if ( self.specs._preserve )
+				await self.specs._preserve( res, projection, options )
 		}
 
 		if ( !options.ignoreValidation )
-			this.validate( res )
+			self.validate( res )
 
 		return res
 	},

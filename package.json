@@ -1,6 +1,6 @@
 {
 	"name": "quanstructor",
-	"version": "0.3.1",
+	"version": "0.3.2",
 	"description": "Exceptionally powerful object model builder for complex architectures",
 	"keywords": [
 		"object-modeling",
@@ -23,7 +23,7 @@
 	"main": "./Quanstructor.js",
 	"dependencies": {
 		"assign.js": "^2.8.10",
-		"isa.js": "^2.2.10",
+		"isa.js": "^2.2.12",
 		"vindication.js": "^4.16.5"
 	},
 	"devDependencies": {},
