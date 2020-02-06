@@ -231,6 +231,10 @@ assign( quanstructor, {
 module.exports = {
 	QUALITY_SPACE,
 	DEFINITIONS,
+	QUANSTRUCTORS,
+	quanstructor (name) {
+		return QUANSTRUCTORS[name]
+	},
 	addPrimus (specs = {}) {
 		DEFINITIONS[ PRIMUS ] = specs
 	},
