@@ -154,7 +154,7 @@ assign( quanstructor, {
 						obj[ attrib ].map( (item) => { return QUANSTRUCTORS[ self.specs[ attrib ].Quanstructor ].build( item, projection, options ) } )
 					) : await QUANSTRUCTORS[ self.specs[ attrib ].Quanstructor ].build( obj[ attrib ], projection, options ))
 			else {
-				let value = obj[attrib] || ( self.specs[ attrib ].hasOwnProperty('default') ? self.assigner.cloneObject( self.specs[ attrib ].default ) : v.defaultValue( self.specs[ attrib ].validation ) )
+				let value = obj[attrib] || ( self.specs[ attrib ].hasOwnProperty('default') ? (_.isFunction( self.specs[ attrib ].default ) ? self.specs[ attrib ].default() : self.assigner.cloneObject( self.specs[ attrib ].default )) : v.defaultValue( self.specs[ attrib ].validation ) )
 				if ( self.specs[ attrib ]._allowNull || defined(value) )
 					res[ attrib ] = value
 			}
@@ -202,7 +202,7 @@ assign( quanstructor, {
 			if ( space && !res[ space ] ) res[ space ] = {}
 			let ref = !space ? res : res[ space ]
 			for (let attrib of this.views[ space ] ) {
-				let value = this.specs[ attrib ].hasOwnProperty('default') ? this.specs[ attrib ].default : v.defaultValue( this.specs[ attrib ].validation )
+				let value = this.specs[ attrib ].hasOwnProperty('default') ? (_.isFunction(this.specs[ attrib ].default) ? this.specs[ attrib ].default() : this.specs[ attrib ].default) : v.defaultValue( this.specs[ attrib ].validation )
 				if ( this.specs[ attrib ].Quanstructor ) {
 					res[ attrib ] = _.isArray( value )
 						? [ await QUANSTRUCTORS[ this.specs[ attrib ].Quanstructor ].proto( projection, options ) ]

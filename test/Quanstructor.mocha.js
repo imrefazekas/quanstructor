@@ -35,7 +35,7 @@ describe('Quastructor', function () {
 	describe('New Proto', function () {
 		it('Define Data', async function () {
 			let Absoluter = Quastructor.newQuanstructor( 'Person', {
-				passportID: { spaces: [ 'database', 'secret' ], validation: REQUIRED },
+				passportID: { default: () => { return Date.now() + '?' }, spaces: [ 'database', 'secret' ], validation: REQUIRED },
 				address: { space: SPACE_SUPP, default: { street: '', county: '', country: '', postal: '' }, validation: {
 					street: REQUIRED, county: REQUIRED, country: REQUIRED, postal: REQUIRED
 				} },
