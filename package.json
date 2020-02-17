@@ -1,6 +1,6 @@
 {
 	"name": "quanstructor",
-	"version": "0.4.2",
+	"version": "0.4.3",
 	"description": "Exceptionally powerful object model builder for complex architectures",
 	"keywords": [
 		"object-modeling",
