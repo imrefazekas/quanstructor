@@ -40,6 +40,7 @@ describe('Quastructor', function () {
 					street: REQUIRED, county: REQUIRED, country: REQUIRED, postal: REQUIRED
 				} },
 				phone: { space: SPACE_SUPP, required: true, typeof: 'phone' },
+				phoneShort: { space: SPACE_SUPP, Proxy: (obj) => { return obj.phone.substring( 0, 2 ) } },
 				email: { space: SPACE_SUPP, required: true, typeof: 'email' }
 			}, 'Entity', 'Referenced' )
 
@@ -52,6 +53,8 @@ describe('Quastructor', function () {
 			Absoluter.project( 'database', [ Quastructor.QUALITY_SPACE, 'database' ] )
 			console.log('-----' )
 			console.log( await Absoluter.build( PERSON_PROTO_DB, 'database' ) )
+			console.log( (await Absoluter.build( PERSON_PROTO_DB, 'database' )).phoneShort )
+			console.log('-----' )
 			console.log( await Absoluter.derive( PERSON_PROTO_DB, 'database', 'secret' ) )
 		} )
 

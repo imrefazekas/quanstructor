@@ -57,6 +57,8 @@ assign( quanstructor, {
 		return this
 	},
 	_tune () {
+		let self = this
+
 		for (let key in this.specs) {
 			if ( !this.specs[key].spaces )
 				this.specs[key].spaces = [ ]
@@ -73,6 +75,10 @@ assign( quanstructor, {
 
 		this.spaces = [ ]
 		this.views = { }
+
+		this.hasProxy = this.attributes.find( (attrib) => {
+			return self.specs[ attrib ] && self.specs[ attrib ].Proxy
+		} )
 
 		for (let key of this.attributes) {
 			for (let space of this.specs[key].spaces ) {
@@ -105,8 +111,9 @@ assign( quanstructor, {
 	validate ( obj ) {
 		for (let prop in obj) {
 			if ( !this.specs[ prop ] ) continue
+			if ( this.specs[ prop ].Proxy ) continue
 
-			if ( this.specs[ prop ].Quanstructor && obj[ prop ] ) {
+			if ( this.specs[ prop ].Quanstructor && obj[ prop ] ) {
 				_.isArray( obj[ prop ] )
 					? obj[ prop ].map( (item) => { return QUANSTRUCTORS[ this.specs[ prop ].Quanstructor ].validate( item ) } )
 					: QUANSTRUCTORS[ this.specs[ prop ].Quanstructor ].validate( obj[prop] )
@@ -120,6 +127,17 @@ assign( quanstructor, {
 		}
 		return obj
 	},
+
+	Proxifier (obj) {
+		let self = this
+		return this.hasProxy ? new Proxy(obj, {
+			get: function (obj, prop) {
+				let def = self.specs[ prop ] && self.specs[ prop ].Proxy
+				return def ? def( obj ) : obj[ prop ]
+			}
+		}) : obj
+	},
+
 	async build ( obj, projection = 'complete', options = {} ) {
 		if ( !this.projections[projection] )
 			throw BaseErrors.InvalidProjection( { projection: projection } )
@@ -127,6 +145,8 @@ assign( quanstructor, {
 		let self = this
 		let res = { }
 		for (let attrib of this.attributes) {
+			if ( this.specs[ attrib ].Proxy ) continue
+
 			if ( this.specs[ attrib ].Quanstructor )
 				res[ attrib ] = !obj[ attrib ]
 					? await QUANSTRUCTORS[ self.specs[ attrib ].Quanstructor ].proto( projection, options )
@@ -158,7 +178,8 @@ assign( quanstructor, {
 		if ( !options.ignoreValidation )
 			self.validate( res )
 
-		return res
+		let proxified = self.Proxifier( res )
+		return proxified
 	},
 	async bridge ( obj, projection = 'complete', view = 'complete', options = {} ) {
 		let res = await this.build( obj, projection, options )
