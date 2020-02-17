@@ -24,7 +24,7 @@
 	"dependencies": {
 		"assign.js": "^2.8.10",
 		"isa.js": "^2.2.12",
-		"vindication.js": "^4.16.5"
+		"vindication.js": "^4.20.0"
 	},
 	"devDependencies": {},
 	"engines": {
