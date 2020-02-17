@@ -23,7 +23,7 @@ function Quanstructor (name, specs = {}, ...derivations) {
 
 	this.projections = { complete: [] }
 
-	this._derivations = [PRIMUS]
+	this._derivations = [ PRIMUS ]
 	this._derivations.push( ...derivations )
 
 	this.specs = { }
@@ -92,8 +92,11 @@ assign( quanstructor, {
 		return this
 	},
 	expand (...specs) {
-		for (let spec of specs)
-			this.assigner.assign( this.specs, _.isString(spec) ? DEFINITIONS[ spec ] : spec )
+		for (let spec of specs) {
+			let sSpec = _.isString(spec) ? DEFINITIONS[ spec ] : spec
+			for (let key in sSpec)
+				this.specs[key] = sSpec[key]
+		}
 		this._tune()
 		return this
 	},
@@ -119,7 +122,7 @@ assign( quanstructor, {
 					: QUANSTRUCTORS[ this.specs[ prop ].Quanstructor ].validate( obj[prop] )
 			}
 
-			if ( !this.specs[ prop ].validation ) return
+			if ( !this.specs[ prop ].validation ) continue
 
 			let res = v.validate( obj[prop], this.specs[ prop ].validation )
 			if (res && Object.keys(res).length > 0 )
@@ -139,6 +142,8 @@ assign( quanstructor, {
 	},
 
 	async build ( obj, projection = 'complete', options = {} ) {
+		options.foldArray = true
+
 		if ( !this.projections[projection] )
 			throw BaseErrors.InvalidProjection( { projection: projection } )
 
@@ -147,13 +152,13 @@ assign( quanstructor, {
 		for (let attrib of this.attributes) {
 			if ( this.specs[ attrib ].Proxy ) continue
 
-			if ( this.specs[ attrib ].Quanstructor )
+			if ( this.specs[ attrib ].Quanstructor ) {
 				res[ attrib ] = !obj[ attrib ]
-					? await QUANSTRUCTORS[ self.specs[ attrib ].Quanstructor ].proto( projection, options )
+					? ( _.isArray( self.specs[ attrib ].default ) ? [] : await QUANSTRUCTORS[ self.specs[ attrib ].Quanstructor ].proto( projection, options ) )
 					: (_.isArray( obj[ attrib ] ) ? await Promise.all(
 						obj[ attrib ].map( (item) => { return QUANSTRUCTORS[ self.specs[ attrib ].Quanstructor ].build( item, projection, options ) } )
 					) : await QUANSTRUCTORS[ self.specs[ attrib ].Quanstructor ].build( obj[ attrib ], projection, options ))
-			else {
+			} else {
 				let value = obj[attrib] || ( self.specs[ attrib ].hasOwnProperty('default') ? (_.isFunction( self.specs[ attrib ].default ) ? self.specs[ attrib ].default() : self.assigner.cloneObject( self.specs[ attrib ].default )) : v.defaultValue( self.specs[ attrib ].validation ) )
 				if ( self.specs[ attrib ]._allowNull || defined(value) )
 					res[ attrib ] = value
@@ -175,8 +180,9 @@ assign( quanstructor, {
 				await self.specs._preserve( res, projection, options )
 		}
 
-		if ( !options.ignoreValidation )
+		if ( !options.ignoreValidation ) {
 			self.validate( res )
+		}
 
 		let proxified = self.Proxifier( res )
 		return proxified
@@ -205,7 +211,7 @@ assign( quanstructor, {
 				let value = this.specs[ attrib ].hasOwnProperty('default') ? (_.isFunction(this.specs[ attrib ].default) ? this.specs[ attrib ].default() : this.specs[ attrib ].default) : v.defaultValue( this.specs[ attrib ].validation )
 				if ( this.specs[ attrib ].Quanstructor ) {
 					res[ attrib ] = _.isArray( value )
-						? [ await QUANSTRUCTORS[ this.specs[ attrib ].Quanstructor ].proto( projection, options ) ]
+						? (options.foldArray ? [] : [ await QUANSTRUCTORS[ this.specs[ attrib ].Quanstructor ].proto( projection, options ) ])
 						: await QUANSTRUCTORS[ this.specs[ attrib ].Quanstructor ].proto( projection, options )
 				} else {
 					if ( this.specs[ attrib ]._allowNull || defined(value) )
