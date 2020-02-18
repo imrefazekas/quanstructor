@@ -239,15 +239,25 @@ assign( quanstructor, {
 			let ref = !space ? res : res[ space ]
 			for (let attrib of this.views[ space ] ) {
 				let value = this.specs[attrib].convert ? await this.specs[attrib].convert( obj[ attrib ] ) : obj[ attrib ]
-				if ( this.specs[ attrib ]._allowNull || defined(value) )
-					ref[ attrib ] = value
+
+				if ( this.specs[ attrib ].Quanstructor ) {
+					ref[ attrib ] = _.isArray( value )
+						? await Promise.all(
+							value.map( (element) => { return QUANSTRUCTORS[ this.specs[ attrib ].Quanstructor ].viewAs( element, projection, options ) } )
+						) : await QUANSTRUCTORS[ this.specs[ attrib ].Quanstructor ].viewAs( value, projection, options )
+				}
+				else {
+					if ( this.specs[ attrib ]._allowNull || defined(value) )
+						ref[ attrib ] = value
+				}
 			}
 		}
 
 		if ( !options.ignoreReform ) {
 			for ( let sup of this._derivations )
-				if ( DEFINITIONS[ sup ] && DEFINITIONS[ sup ]._reform )
+				if ( DEFINITIONS[ sup ] && DEFINITIONS[ sup ]._reform ) {
 					await DEFINITIONS[ sup ]._reform( res, projection, options )
+				}
 			if ( this.specs._reform ) await this.specs._reform( res, projection, options )
 		}
 
