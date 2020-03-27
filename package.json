@@ -22,9 +22,9 @@
 	"license": "MIT",
 	"main": "./Quanstructor.js",
 	"dependencies": {
-		"assign.js": "^2.8.10",
+		"assign.js": "^2.8.11",
 		"isa.js": "^2.2.12",
-		"vindication.js": "^4.20.0"
+		"vindication.js": "^4.20.1"
 	},
 	"devDependencies": {},
 	"engines": {
