@@ -31,7 +31,7 @@ function Quanstructor (name, specs = {}, ...derivations) {
 	this.expand( ...this._derivations )
 	this.expand( specs )
 
-	this._viewProxies = false
+	this._viewProxy = false
 
 	this._tune()
 }
@@ -39,7 +39,7 @@ function Quanstructor (name, specs = {}, ...derivations) {
 let quanstructor = Quanstructor.prototype
 assign( quanstructor, {
 	viewProxies ( view ) {
-		this._viewProxies = !!view
+		this._viewProxy = !!view
 		return this
 	},
 	_addToSpace ( space, key ) {
@@ -244,7 +244,7 @@ assign( quanstructor, {
 			if ( space && !res[ space ] ) res[ space ] = {}
 			let ref = !space ? res : res[ space ]
 			for (let attrib of this.views[ space ] ) {
-				if ( !this._viewProxies && this.specs[ attrib ].Proxy ) continue
+				if ( !this._viewProxy && this.specs[ attrib ].Proxy && !this.specs[ attrib ]._viewProxy ) continue
 
 				let value = this.specs[attrib].convert ? await this.specs[attrib].convert( obj[ attrib ] ) : obj[ attrib ]
 
