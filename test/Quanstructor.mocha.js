@@ -40,7 +40,7 @@ describe('Quastructor', function () {
 					street: REQUIRED, county: REQUIRED, country: REQUIRED, postal: REQUIRED
 				} },
 				phone: { space: SPACE_SUPP, required: true, typeof: 'phone' },
-				phoneShort: { space: SPACE_SUPP, Proxy: (obj) => { return obj.phone.substring( 0, 2 ) } },
+				phoneShort: { space: SPACE_SUPP, Proxy: (obj) => { return obj.phone.substring( 0, 2 ) }, _persistent: true },
 				email: { space: SPACE_SUPP, required: true, typeof: 'email' }
 			}, 'Entity', 'Referenced' )
 
@@ -64,11 +64,17 @@ describe('Quastructor', function () {
 				person: { space: SPACE_SUPP, Quanstructor: 'Person' },
 				people: { default: [], space: SPACE_SUPP, Quanstructor: 'Person' }
 			} )
-			console.log( await Absoluter.build( {
+			console.log( JSON.stringify( await Absoluter.build( {
 				employeeID: '121212',
 				person: PERSON_PROTO_DB,
 				people: [ PERSON_PROTO_DB ]
-			} ) )
+			} ), null, 4 ) )
+
+			console.log( '***', JSON.stringify( await Absoluter.derive( {
+				employeeID: '121212',
+				person: PERSON_PROTO_DB,
+				people: [ PERSON_PROTO_DB ]
+			} ), null, 4 ) )
 		} )
 	} )
 
