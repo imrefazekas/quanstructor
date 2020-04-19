@@ -130,7 +130,10 @@ assign( quanstructor, {
 
 			if ( !this.specs[ prop ].validation ) continue
 
-			let res = v.validate( obj[prop], this.specs[ prop ].validation )
+			let constraint = {}
+			constraint[ prop ] = this.specs[ prop ].validation
+			let res = v.validate( obj, constraint )
+			// let res = v.validate( obj[prop], this.specs[ prop ].validation )
 			if (res && Object.keys(res).length > 0 )
 				throw BaseErrors.FailedSchemaValidation( { schema: this.name, property: prop, validation: JSON.stringify(res) } )
 		}
