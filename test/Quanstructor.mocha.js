@@ -76,6 +76,24 @@ describe('Quastructor', function () {
 				people: [ PERSON_PROTO_DB ]
 			} ), null, 4 ) )
 		} )
+
+		it('Crossroads', async function () {
+			let RoadAbsoluter = Quastructor.newQuanstructor( 'Road', {
+				distance: { validation: { required: true, typeof: Number } }
+			} )
+			let HighwayAbsoluter = Quastructor.newQuanstructor( 'Highway', {
+				lanes: { validation: { required: true, typeof: Number } }
+			} )
+			let PathAbsoluter = Quastructor.newQuanstructor( 'Path', {
+				ways: { default: [], Quanstructor: 'Road, Highway' }
+			} )
+			console.log( JSON.stringify( await PathAbsoluter.build( {
+				ways: [ { distance: 2 }, { lanes: 5, _qtype: 'Highway' } ]
+			} ), null, 4 ) )
+			console.log( JSON.stringify( await PathAbsoluter.derive( {
+				ways: [ { distance: 2 }, { lanes: 5, _qtype: 'Highway' } ]
+			} ), null, 4 ) )
+		} )
 	} )
 
 	after( async function () {

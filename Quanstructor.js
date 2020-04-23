@@ -9,6 +9,8 @@ let assign = Object.assign
 
 const QUALITY_SPACE = ''
 
+const SEPARATOR = ','
+
 const PRIMUS = 'PRIMUS'
 
 const DEFINITIONS = { }
@@ -61,6 +63,11 @@ assign( quanstructor, {
 		DEFINITIONS[ this.name ] = this.specs
 		QUANSTRUCTORS[ this.name ] = this
 		return this
+	},
+	_findQ ( qRef, obj = {} ) {
+		let refs = qRef.split( SEPARATOR ).map( (ref) => { return ref.trim() } ).filter( (ref) => { return ref } )
+		if ( refs.length < 2 ) return qRef
+		return obj._qtype || refs[0]
 	},
 	_tune () {
 		let self = this
@@ -118,24 +125,26 @@ assign( quanstructor, {
 		return valid
 	},
 	validate ( obj ) {
-		for (let prop in obj) {
-			if ( !this.specs[ prop ] ) continue
-			if ( this.specs[ prop ].Proxy ) continue
+		let self = this
+		for (let prop in self.specs) {
+			if ( self.specs[ prop ].Proxy ) continue
 
-			if ( this.specs[ prop ].Quanstructor && obj[ prop ] ) {
+			if ( self.specs[ prop ].Quanstructor && obj[ prop ] ) {
 				_.isArray( obj[ prop ] )
-					? obj[ prop ].map( (item) => { return QUANSTRUCTORS[ this.specs[ prop ].Quanstructor ].validate( item ) } )
-					: QUANSTRUCTORS[ this.specs[ prop ].Quanstructor ].validate( obj[prop] )
+					? obj[ prop ].map( (item) => {
+						return QUANSTRUCTORS[ self._findQ( self.specs[ prop ].Quanstructor, item ) ].validate( item )
+					} )
+					: QUANSTRUCTORS[ self._findQ( self.specs[ prop ].Quanstructor, obj[prop]) ].validate( obj[prop] )
 			}
 
-			if ( !this.specs[ prop ].validation ) continue
+			if ( !self.specs[ prop ].validation ) continue
 
 			let constraint = {}
-			constraint[ prop ] = this.specs[ prop ].validation
+			constraint[ prop ] = self.specs[ prop ].validation
 			let res = v.validate( obj, constraint )
 			// let res = v.validate( obj[prop], this.specs[ prop ].validation )
 			if (res && Object.keys(res).length > 0 )
-				throw BaseErrors.FailedSchemaValidation( { schema: this.name, property: prop, validation: JSON.stringify(res) } )
+				throw BaseErrors.FailedSchemaValidation( { schema: self.name, property: prop, validation: JSON.stringify(res) } )
 		}
 		return obj
 	},
@@ -158,15 +167,17 @@ assign( quanstructor, {
 
 		let self = this
 		let res = { }
-		for (let attrib of this.attributes) {
-			if ( this.specs[ attrib ].Proxy ) continue
+		for (let attrib of self.attributes) {
+			if ( self.specs[ attrib ].Proxy ) continue
 
-			if ( this.specs[ attrib ].Quanstructor ) {
+			if ( self.specs[ attrib ].Quanstructor ) {
 				res[ attrib ] = !obj[ attrib ]
-					? ( _.isArray( self.specs[ attrib ].default ) ? [] : await QUANSTRUCTORS[ self.specs[ attrib ].Quanstructor ].proto( projection, options ) )
+					? ( _.isArray( self.specs[ attrib ].default ) ? [] : await QUANSTRUCTORS[ self._findQ( self.specs[ attrib ].Quanstructor ) ].proto( projection, options ) )
 					: (_.isArray( obj[ attrib ] ) ? await Promise.all(
-						obj[ attrib ].map( (item) => { return QUANSTRUCTORS[ self.specs[ attrib ].Quanstructor ].build( item, projection, options ) } )
-					) : await QUANSTRUCTORS[ self.specs[ attrib ].Quanstructor ].build( obj[ attrib ], projection, options ))
+						obj[ attrib ].map( (item) => {
+							return QUANSTRUCTORS[ self._findQ( self.specs[ attrib ].Quanstructor, item ) ].build( item, projection, options )
+						} )
+					) : await QUANSTRUCTORS[ self._findQ( self.specs[ attrib ].Quanstructor, obj[ attrib ] ) ].build( obj[ attrib ], projection, options ))
 			} else {
 				let value = obj[attrib] || ( self.specs[ attrib ].hasOwnProperty('default') ? (_.isFunction( self.specs[ attrib ].default ) ? self.specs[ attrib ].default() : self.assigner.cloneObject( self.specs[ attrib ].default )) : v.defaultValue( self.specs[ attrib ].validation ) )
 				if ( self.specs[ attrib ]._allowNull || defined(value) )
@@ -194,6 +205,7 @@ assign( quanstructor, {
 		}
 
 		let proxified = self.Proxifier( res )
+		proxified._qtype = this.name
 		return proxified
 	},
 	async bridge ( obj, projection = 'complete', view = 'complete', options = {} ) {
@@ -212,18 +224,19 @@ assign( quanstructor, {
 		if ( !this.projections[projection] )
 			throw BaseErrors.InvalidProjection( { projection: projection } )
 
+		let self = this
 		let res = {}
-		for (let space of this.projections[ projection ] ) {
+		for (let space of self.projections[ projection ] ) {
 			if ( space && !res[ space ] ) res[ space ] = {}
 			let ref = !space ? res : res[ space ]
-			for (let attrib of this.views[ space ] ) {
-				let value = this.specs[ attrib ].hasOwnProperty('default') ? (_.isFunction(this.specs[ attrib ].default) ? this.specs[ attrib ].default() : this.specs[ attrib ].default) : v.defaultValue( this.specs[ attrib ].validation )
-				if ( this.specs[ attrib ].Quanstructor ) {
+			for (let attrib of self.views[ space ] ) {
+				let value = self.specs[ attrib ].hasOwnProperty('default') ? (_.isFunction(self.specs[ attrib ].default) ? self.specs[ attrib ].default() : self.specs[ attrib ].default) : v.defaultValue( this.specs[ attrib ].validation )
+				if ( self.specs[ attrib ].Quanstructor ) {
 					res[ attrib ] = _.isArray( value )
-						? (options.foldArray ? [] : [ await QUANSTRUCTORS[ this.specs[ attrib ].Quanstructor ].proto( projection, options ) ])
-						: await QUANSTRUCTORS[ this.specs[ attrib ].Quanstructor ].proto( projection, options )
+						? (options.foldArray ? [] : [ await QUANSTRUCTORS[ self._findQ( this.specs[ attrib ].Quanstructor ) ].proto( projection, options ) ])
+						: await QUANSTRUCTORS[ self._findQ( self.specs[ attrib ].Quanstructor ) ].proto( projection, options )
 				} else {
-					if ( this.specs[ attrib ]._allowNull || defined(value) )
+					if ( self.specs[ attrib ]._allowNull || defined(value) )
 						ref[ attrib ] = value
 				}
 			}
@@ -242,23 +255,24 @@ assign( quanstructor, {
 		if ( !this.projections[projection] )
 			throw BaseErrors.InvalidProjection( { projection: projection } )
 
+		let self = this
 		let res = {}
-		for (let space of this.projections[ projection ] ) {
+		for (let space of self.projections[ projection ] ) {
 			if ( space && !res[ space ] ) res[ space ] = {}
 			let ref = !space ? res : res[ space ]
-			for (let attrib of this.views[ space ] ) {
-				if ( !this._viewProxy && this.specs[ attrib ].Proxy && !this.specs[ attrib ]._viewProxy ) continue
+			for (let attrib of self.views[ space ] ) {
+				if ( !self._viewProxy && self.specs[ attrib ].Proxy && !self.specs[ attrib ]._viewProxy ) continue
 
-				let value = this.specs[attrib].convert ? await this.specs[attrib].convert( obj[ attrib ] ) : obj[ attrib ]
+				let value = self.specs[attrib].convert ? await self.specs[attrib].convert( obj[ attrib ] ) : obj[ attrib ]
 
-				if ( this.specs[ attrib ].Quanstructor ) {
+				if ( self.specs[ attrib ].Quanstructor ) {
 					ref[ attrib ] = _.isArray( value )
 						? await Promise.all(
-							value.map( (element) => { return QUANSTRUCTORS[ this.specs[ attrib ].Quanstructor ].viewAs( element, projection, options ) } )
-						) : await QUANSTRUCTORS[ this.specs[ attrib ].Quanstructor ].viewAs( value, projection, options )
+							value.map( (element) => { return QUANSTRUCTORS[ self._findQ( self.specs[ attrib ].Quanstructor, element ) ].viewAs( element, projection, options ) } )
+						) : await QUANSTRUCTORS[ self._findQ( self.specs[ attrib ].Quanstructor, value) ].viewAs( value, projection, options )
 				}
 				else {
-					if ( this.specs[ attrib ]._allowNull || defined(value) )
+					if ( self.specs[ attrib ]._allowNull || defined(value) )
 						ref[ attrib ] = value
 				}
 			}
@@ -277,6 +291,7 @@ assign( quanstructor, {
 } )
 
 module.exports = {
+	SEPARATOR,
 	QUALITY_SPACE,
 	DEFINITIONS,
 	QUANSTRUCTORS,
