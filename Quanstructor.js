@@ -13,10 +13,12 @@ const SEPARATOR = ','
 
 const PRIMUS = 'PRIMUS'
 
+const Q_TYPE_ATTR = '_qtype'
+
 const DEFINITIONS = { }
 const QUANSTRUCTORS = { }
 
-let PROPERTIES_TO_IGNORE = [ '_allowNull', '_reform', '_preserve', '_derivations' ]
+let PROPERTIES_TO_IGNORE = [ '_allowNull', '_reform', '_preserve', '_derivations', Q_TYPE_ATTR ]
 
 function Quanstructor (name, specs = {}, ...derivations) {
 	this.assigner = new Assigner()
@@ -67,7 +69,7 @@ assign( quanstructor, {
 	_findQ ( qRef, obj = {} ) {
 		let refs = qRef.split( SEPARATOR ).map( (ref) => { return ref.trim() } ).filter( (ref) => { return ref } )
 		if ( refs.length < 2 ) return qRef
-		return obj._qtype || refs[0]
+		return obj[ Q_TYPE_ATTR ] || refs[0]
 	},
 	_tune () {
 		let self = this
@@ -205,7 +207,7 @@ assign( quanstructor, {
 		}
 
 		let proxified = self.Proxifier( res )
-		proxified._qtype = this.name
+		proxified[ Q_TYPE_ATTR ] = this.name
 		return proxified
 	},
 	async bridge ( obj, projection = 'complete', view = 'complete', options = {} ) {
@@ -291,6 +293,7 @@ assign( quanstructor, {
 } )
 
 module.exports = {
+	Q_TYPE_ATTR,
 	SEPARATOR,
 	QUALITY_SPACE,
 	DEFINITIONS,
