@@ -210,6 +210,24 @@ assign( quanstructor, {
 		proxified[ Q_TYPE_ATTR ] = this.name
 		return proxified
 	},
+
+	async mimic (obj, mimicer, projection = 'complete', options = {}) {
+		if ( !this.projections[projection] )
+			throw BaseErrors.InvalidProjection( { projection: projection } )
+
+		let self = this
+		let res = { }
+		for (let attrib of self.attributes) {
+			if ( self.specs[ attrib ].Proxy ) continue
+
+			res[ attrib ] = await mimicer( attrib, obj[ attrib ], res )
+		}
+
+		res = await mimicer( '', obj, res )
+
+		return res
+	},
+
 	async bridge ( obj, projection = 'complete', view = 'complete', options = {} ) {
 		let res = await this.build( obj, projection, options )
 
