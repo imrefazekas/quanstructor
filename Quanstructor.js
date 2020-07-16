@@ -211,19 +211,21 @@ assign( quanstructor, {
 		return proxified
 	},
 
-	async mimic (obj, mimicer, projection = 'complete', options = {}) {
+	async umbra (obj, projection = 'complete', caster, options = {}) {
 		if ( !this.projections[projection] )
 			throw BaseErrors.InvalidProjection( { projection: projection } )
+
+		let qobject = obj[ Q_TYPE_ATTR ] ? obj : await this.build( obj, projection, options )
 
 		let self = this
 		let res = { }
 		for (let attrib of self.attributes) {
 			if ( self.specs[ attrib ].Proxy ) continue
 
-			res[ attrib ] = await mimicer( attrib, obj[ attrib ], res )
+			res[ attrib ] = await caster( attrib, qobject[ attrib ], qobject, res )
 		}
 
-		res = await mimicer( '', obj, res )
+		res = await caster( '', qobject, qobject, res )
 
 		return res
 	},
