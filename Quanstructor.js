@@ -25,6 +25,8 @@ function Quanstructor (name, specs = {}, ...derivations) {
 
 	this.name = name
 
+	this._keepQType = false
+
 	this.projections = { complete: [] }
 
 	this._derivations = [ PRIMUS ]
@@ -42,6 +44,10 @@ function Quanstructor (name, specs = {}, ...derivations) {
 
 let quanstructor = Quanstructor.prototype
 assign( quanstructor, {
+	keepQType (keep = true) {
+		this._keepQType = keep
+		return this
+	},
 	viewProxies ( view ) {
 		this._viewProxy = !!view
 		return this
@@ -236,6 +242,9 @@ assign( quanstructor, {
 		let final = await this.viewAs( res, view, options )
 
 		this.assigner.assign( final, obj )
+
+		if ( this._keepQType )
+			final[ Q_TYPE_ATTR ] = this.name
 
 		return final
 	},

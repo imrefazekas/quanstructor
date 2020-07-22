@@ -43,6 +43,7 @@ describe('Quastructor', function () {
 				phoneShort: { space: SPACE_SUPP, Proxy: (obj) => { return obj.phone.substring( 0, 2 ) }, _persistent: true },
 				email: { space: SPACE_SUPP, required: true, typeof: 'email' }
 			}, 'Entity', 'Referenced' )
+			Absoluter.keepQType( true )
 
 			console.log(':::', Absoluter)
 
@@ -54,7 +55,7 @@ describe('Quastructor', function () {
 			console.log('-----' )
 			console.log( await Absoluter.build( PERSON_PROTO_DB, 'database' ) )
 			console.log( (await Absoluter.build( PERSON_PROTO_DB, 'database' )).phoneShort )
-			console.log('-----' )
+			console.log('****-----' )
 			console.log( await Absoluter.derive( PERSON_PROTO_DB, 'database', 'secret' ) )
 		} )
 
