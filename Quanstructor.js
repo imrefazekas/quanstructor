@@ -243,9 +243,6 @@ assign( quanstructor, {
 
 		this.assigner.assign( final, obj )
 
-		if ( this._keepQType )
-			final[ Q_TYPE_ATTR ] = this.name
-
 		return final
 	},
 	async derive ( obj, projection = 'complete', options = {} ) {
@@ -316,6 +313,9 @@ assign( quanstructor, {
 				}
 			if ( this.specs._reform ) await this.specs._reform( res, projection, options )
 		}
+
+		if ( this._keepQType )
+			res[ Q_TYPE_ATTR ] = this.name
 
 		return res
 	}
