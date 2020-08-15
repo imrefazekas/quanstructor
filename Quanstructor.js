@@ -180,7 +180,7 @@ assign( quanstructor, {
 
 			if ( self.specs[ attrib ].Quanstructor ) {
 				res[ attrib ] = !obj[ attrib ]
-					? ( _.isArray( self.specs[ attrib ].default ) ? [] : await QUANSTRUCTORS[ self._findQ( self.specs[ attrib ].Quanstructor ) ].proto( projection, options ) )
+					? ( _.isArray( self.specs[ attrib ].default ) ? [] : ( self.specs[ attrib ].default === null ? null : await QUANSTRUCTORS[ self._findQ( self.specs[ attrib ].Quanstructor ) ].proto( projection, options ) ) )
 					: (_.isArray( obj[ attrib ] ) ? await Promise.all(
 						obj[ attrib ].map( (item) => {
 							return QUANSTRUCTORS[ self._findQ( self.specs[ attrib ].Quanstructor, item ) ].build( item, projection, options )
