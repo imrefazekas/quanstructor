@@ -297,7 +297,7 @@ assign( quanstructor, {
 					ref[ attrib ] = _.isArray( value )
 						? await Promise.all(
 							value.map( (element) => { return QUANSTRUCTORS[ self._findQ( self.specs[ attrib ].Quanstructor, element ) ].viewAs( element, projection, options ) } )
-						) : await QUANSTRUCTORS[ self._findQ( self.specs[ attrib ].Quanstructor, value) ].viewAs( value, projection, options )
+						) : value === null ? null : await QUANSTRUCTORS[ self._findQ( self.specs[ attrib ].Quanstructor, value) ].viewAs( value, projection, options )
 				}
 				else {
 					if ( self.specs[ attrib ]._allowNull || defined(value) )
