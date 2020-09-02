@@ -255,6 +255,9 @@ assign( quanstructor, {
 			if ( _.isString( object ) ) return { type: 'integer' }
 			if ( _.isBoolean( object ) ) return { type: 'boolean' }
 			if ( _.isArray( object ) ) return { type: 'array' }
+			if ( _.isObject( object ) && embedded && options.flat ) {
+				return { type: 'object' }
+			}
 			if ( _.isObject( object ) ) {
 				let sd = embedded ? { } : { title: name, type: 'object', properties: { } }
 				let props = embedded ? sd : sd.properties
