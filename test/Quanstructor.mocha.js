@@ -65,6 +65,8 @@ describe('Quastructor', function () {
 				person: { space: SPACE_SUPP, Quanstructor: 'Person' },
 				people: { default: [], space: SPACE_SUPP, Quanstructor: 'Person' }
 			} )
+			console.log( 'SCHEMA::::::', await Absoluter.schema( 'Emp' ) )
+
 			console.log( JSON.stringify( await Absoluter.build( {
 				employeeID: '121212',
 				person: PERSON_PROTO_DB,

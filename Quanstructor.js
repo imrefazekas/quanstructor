@@ -245,6 +245,29 @@ assign( quanstructor, {
 
 		return final
 	},
+
+	async schema ( name, projection = 'complete', options = {} ) {
+		let res = await this.proto( projection, options )
+
+		function walk (object, embedded = false) {
+			if ( !defined(object) ) return { type: 'object' }
+			if ( _.isNumber( object ) ) return { type: 'number' }
+			if ( _.isString( object ) ) return { type: 'integer' }
+			if ( _.isBoolean( object ) ) return { type: 'boolean' }
+			if ( _.isArray( object ) ) return { type: 'array' }
+			if ( _.isObject( object ) ) {
+				let sd = embedded ? { } : { title: name, type: 'object', properties: { } }
+				let props = embedded ? sd : sd.properties
+				for (let key in object)
+					props[ key ] = walk( object[key], true )
+				return sd
+			}
+			else return { type: 'object' }
+		}
+
+		return walk( res, false )
+	},
+
 	async derive ( obj, projection = 'complete', options = {} ) {
 		return this.bridge( obj, projection, options.view || projection, options )
 	},
