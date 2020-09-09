@@ -200,6 +200,7 @@ assign( quanstructor, {
 				}
 		}
 
+		res[ Q_TYPE_ATTR ] = this.name
 		if ( !options.ignorePreserve ) {
 			for ( let sup of self._derivations )
 				if ( DEFINITIONS[ sup ] && DEFINITIONS[ sup ]._preserve )
@@ -213,7 +214,7 @@ assign( quanstructor, {
 		}
 
 		let proxified = self.Proxifier( res )
-		proxified[ Q_TYPE_ATTR ] = this.name
+		// proxified[ Q_TYPE_ATTR ] = this.name
 		return proxified
 	},
 
