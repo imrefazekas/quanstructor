@@ -18,6 +18,8 @@ const Q_TYPE_ATTR = '_qtype'
 const DEFINITIONS = { }
 const QUANSTRUCTORS = { }
 
+let IGNORE_VALIDATION = false
+
 let PROPERTIES_TO_IGNORE = [ '_allowNull', '_reform', '_preserve', '_derivations', Q_TYPE_ATTR ]
 
 function Quanstructor (name, specs = {}, ...derivations) {
@@ -41,6 +43,8 @@ function Quanstructor (name, specs = {}, ...derivations) {
 
 	this._tune()
 }
+
+let PROTOS = {}
 
 let quanstructor = Quanstructor.prototype
 assign( quanstructor, {
@@ -209,7 +213,7 @@ assign( quanstructor, {
 				await self.specs._preserve( res, projection, options )
 		}
 
-		if ( !options.ignoreValidation ) {
+		if ( !IGNORE_VALIDATION && !options.ignoreValidation ) {
 			self.validate( res )
 		}
 
@@ -279,6 +283,8 @@ assign( quanstructor, {
 		if ( !this.projections[projection] )
 			throw BaseErrors.InvalidProjection( { projection: projection } )
 
+		if ( PROTOS[ this.name ] && PROTOS[ this.name ][projection] ) return assign.cloneObject( PROTOS[ this.name ][projection] )
+
 		let self = this
 		let res = {}
 		for (let space of self.projections[ projection ] ) {
@@ -303,6 +309,9 @@ assign( quanstructor, {
 					await DEFINITIONS[ sup ]._reform( res, projection, options )
 			if ( this.specs._reform ) await this.specs._reform( res, projection, options )
 		}
+
+		if ( !PROTOS[ this.name ] ) PROTOS[ this.name ] = {}
+		PROTOS[ this.name ][projection] = res
 
 		return res
 	},
@@ -354,6 +363,12 @@ module.exports = {
 	QUALITY_SPACE,
 	DEFINITIONS,
 	QUANSTRUCTORS,
+	clearProtos () {
+		PROTOS = {}
+	},
+	ignoreValudation (ignore = false) {
+		IGNORE_VALIDATION = !!ignore
+	},
 	quanstructor (name) {
 		return QUANSTRUCTORS[name]
 	},
