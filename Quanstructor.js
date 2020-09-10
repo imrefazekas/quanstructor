@@ -44,7 +44,7 @@ function Quanstructor (name, specs = {}, ...derivations) {
 	this._tune()
 }
 
-let PROTOS = {}
+let PROTO_CACHE = {}
 
 let quanstructor = Quanstructor.prototype
 assign( quanstructor, {
@@ -283,7 +283,7 @@ assign( quanstructor, {
 		if ( !this.projections[projection] )
 			throw BaseErrors.InvalidProjection( { projection: projection } )
 
-		if ( PROTOS[ this.name ] && PROTOS[ this.name ][projection] ) return assign.cloneObject( PROTOS[ this.name ][projection] )
+		if ( PROTO_CACHE[ this.name ] && PROTO_CACHE[ this.name ][projection] ) return assign.cloneObject( PROTO_CACHE[ this.name ][projection] )
 
 		let self = this
 		let res = {}
@@ -310,8 +310,8 @@ assign( quanstructor, {
 			if ( this.specs._reform ) await this.specs._reform( res, projection, options )
 		}
 
-		if ( !PROTOS[ this.name ] ) PROTOS[ this.name ] = {}
-		PROTOS[ this.name ][projection] = res
+		if ( !PROTO_CACHE[ this.name ] ) PROTO_CACHE[ this.name ] = {}
+		PROTO_CACHE[ this.name ][projection] = res
 
 		return res
 	},
@@ -363,8 +363,8 @@ module.exports = {
 	QUALITY_SPACE,
 	DEFINITIONS,
 	QUANSTRUCTORS,
-	clearProtos () {
-		PROTOS = {}
+	clearProtoCache () {
+		PROTO_CACHE = {}
 	},
 	ignoreValudation (ignore = false) {
 		IGNORE_VALIDATION = !!ignore
