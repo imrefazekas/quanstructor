@@ -18,12 +18,15 @@ const Q_TYPE_ATTR = '_qtype'
 const DEFINITIONS = { }
 const QUANSTRUCTORS = { }
 
+const PROJ_COMPLETE = 'complete'
+
 let IGNORE_VALIDATION = false
 
 let PROPERTIES_TO_IGNORE = [ '_allowNull', '_reform', '_preserve', '_derivations', Q_TYPE_ATTR ]
 
-function Quanstructor (name, specs = {}, ...derivations) {
+function Quanstructor (name, specs, ...derivations) {
 	this.assigner = new Assigner()
+	this.cloner = new Assigner()
 
 	this.name = name
 
@@ -36,12 +39,12 @@ function Quanstructor (name, specs = {}, ...derivations) {
 
 	this.specs = { }
 
+	this._viewProxy = false
+
 	this.expand( ...this._derivations )
 	this.expand( specs )
 
-	this._viewProxy = false
-
-	this._tune()
+	this._protify()
 }
 
 let PROTO_CACHE = {}
@@ -81,7 +84,7 @@ assign( quanstructor, {
 		if ( refs.length < 2 ) return qRef
 		return obj[ Q_TYPE_ATTR ] || refs[0]
 	},
-	_tune () {
+	async _tune () {
 		let self = this
 
 		for (let key in this.specs) {
@@ -105,6 +108,7 @@ assign( quanstructor, {
 			return self.specs[ attrib ] && self.specs[ attrib ].Proxy
 		} )
 
+		this._proto = {}
 		for (let key of this.attributes) {
 			for (let space of this.specs[key].spaces ) {
 				this.spaces.pushUnique( space )
@@ -112,8 +116,16 @@ assign( quanstructor, {
 
 				this._addToSpace( space, key )
 			}
+
+			if ( self.specs[ key ].Quanstructor ) {
+				await QUANSTRUCTORS[ self._findQ( self.specs[ key ].Quanstructor ) ]._tune()
+				this._proto[ key ] = _.isArray( self.specs[ key ].default ) ? [] : ( self.specs[ key ].default === null ? null : QUANSTRUCTORS[ self._findQ( self.specs[ key ].Quanstructor ) ]._proto )
+			} else
+				this._proto[ key ] = ( self.specs[ key ].hasOwnProperty('default') ? (_.isFunction( self.specs[ key ].default ) ? self.specs[ key ].default() : self.cloner.cloneObject( self.specs[ key ].default )) : v.defaultValue( self.specs[ key ].validation ) )
 		}
-		this._protify()
+
+		this._tuned = true
+
 		return this
 	},
 	expand (...specs) {
@@ -122,7 +134,6 @@ assign( quanstructor, {
 			for (let key in sSpec)
 				this.specs[key] = sSpec[key]
 		}
-		this._tune()
 		return this
 	},
 	project (name, spaces = []) {
@@ -171,31 +182,30 @@ assign( quanstructor, {
 		}) : obj
 	},
 
-	async build ( obj, projection = 'complete', options = {} ) {
+	async build ( obj, projection = PROJ_COMPLETE, options = {} ) {
+		if (!this._tuned) await this._tune()
+
 		options.foldArray = true
 
 		if ( !this.projections[projection] )
 			throw BaseErrors.InvalidProjection( { projection: projection } )
 
 		let self = this
-		let res = { }
+		let res = this.cloner.cloneObject( this._proto )
+
 		for (let attrib of self.attributes) {
 			if ( self.specs[ attrib ].Proxy ) continue
+			if (!defined(obj[ attrib ])) continue
 
-			if ( self.specs[ attrib ].Quanstructor ) {
-				res[ attrib ] = !obj[ attrib ]
-					? ( _.isArray( self.specs[ attrib ].default ) ? [] : ( self.specs[ attrib ].default === null ? null : await QUANSTRUCTORS[ self._findQ( self.specs[ attrib ].Quanstructor ) ].proto( projection, options ) ) )
-					: (_.isArray( obj[ attrib ] ) ? await Promise.all(
-						obj[ attrib ].map( (item) => {
-							return QUANSTRUCTORS[ self._findQ( self.specs[ attrib ].Quanstructor, item ) ].build( item, projection, options )
-						} )
-					) : await QUANSTRUCTORS[ self._findQ( self.specs[ attrib ].Quanstructor, obj[ attrib ] ) ].build( obj[ attrib ], projection, options ))
-			} else {
-				let value = obj[attrib] || ( self.specs[ attrib ].hasOwnProperty('default') ? (_.isFunction( self.specs[ attrib ].default ) ? self.specs[ attrib ].default() : self.assigner.cloneObject( self.specs[ attrib ].default )) : v.defaultValue( self.specs[ attrib ].validation ) )
-				if ( self.specs[ attrib ]._allowNull || defined(value) )
-					res[ attrib ] = value
-			}
+			res[ attrib ] = self.specs[ attrib ].Quanstructor
+				? ( _.isArray( obj[ attrib ] ) ? await Promise.all(
+					obj[ attrib ].map( (item) => {
+						return QUANSTRUCTORS[ self._findQ( self.specs[ attrib ].Quanstructor, item ) ].build( item, projection, options )
+					} )
+				) : await QUANSTRUCTORS[ self._findQ( self.specs[ attrib ].Quanstructor, obj[ attrib ] ) ].build( obj[ attrib ], projection, options ) )
+				: obj[attrib]
 		}
+
 		for (let space of self.projections[ projection ] ) {
 			if ( obj[ space ] )
 				for (let attrib of self.views[ space ] ) {
@@ -222,7 +232,9 @@ assign( quanstructor, {
 		return proxified
 	},
 
-	async umbra (obj, projection = 'complete', caster, options = {}) {
+	async umbra (obj, projection = PROJ_COMPLETE, caster, options = {}) {
+		if (!this._tuned) await this._tune()
+
 		if ( !this.projections[projection] )
 			throw BaseErrors.InvalidProjection( { projection: projection } )
 
@@ -241,7 +253,7 @@ assign( quanstructor, {
 		return res
 	},
 
-	async bridge ( obj, projection = 'complete', view = 'complete', options = {} ) {
+	async bridge ( obj, projection = PROJ_COMPLETE, view = PROJ_COMPLETE, options = {} ) {
 		let res = await this.build( obj, projection, options )
 
 		let final = await this.viewAs( res, view, options )
@@ -251,7 +263,9 @@ assign( quanstructor, {
 		return final
 	},
 
-	async schema ( name, projection = 'complete', options = {} ) {
+	async schema ( name, projection = PROJ_COMPLETE, options = {} ) {
+		if (!this._tuned) await this._tune()
+
 		let res = await this.proto( projection, options )
 
 		function walk (object, embedded = false) {
@@ -276,14 +290,16 @@ assign( quanstructor, {
 		return walk( res, false )
 	},
 
-	async derive ( obj, projection = 'complete', options = {} ) {
+	async derive ( obj, projection = PROJ_COMPLETE, options = {} ) {
 		return this.bridge( obj, projection, options.view || projection, options )
 	},
-	async proto ( projection = 'complete', options = {} ) {
+	async proto ( projection = PROJ_COMPLETE, options = {} ) {
+		if (!this._tuned) await this._tune()
+
 		if ( !this.projections[projection] )
 			throw BaseErrors.InvalidProjection( { projection: projection } )
 
-		if ( PROTO_CACHE[ this.name ] && PROTO_CACHE[ this.name ][projection] ) return assign.cloneObject( PROTO_CACHE[ this.name ][projection] )
+		if ( PROTO_CACHE[ this.name ] && PROTO_CACHE[ this.name ][projection] ) return this.cloner.cloneObject( PROTO_CACHE[ this.name ][projection] )
 
 		let self = this
 		let res = {}
@@ -315,7 +331,9 @@ assign( quanstructor, {
 
 		return res
 	},
-	async viewAs ( obj, projection = 'complete', options = {} ) {
+	async viewAs ( obj, projection = PROJ_COMPLETE, options = {} ) {
+		if (!this._tuned) await this._tune()
+
 		if ( !this.projections[projection] )
 			throw BaseErrors.InvalidProjection( { projection: projection } )
 
@@ -379,6 +397,10 @@ module.exports = {
 		DEFINITIONS[ name ] = specs
 	},
 	newQuanstructor (name, specs = {}, ...derivations) {
-		return new Quanstructor(name, specs, ...derivations)
+		return new Quanstructor(name, specs, ...derivations )
+	},
+	async tuneAll () {
+		for (let name in QUANSTRUCTORS)
+			await QUANSTRUCTORS[ name ]._tune()
 	}
 }
