@@ -343,7 +343,7 @@ assign( quanstructor, {
 			if ( space && !res[ space ] ) res[ space ] = {}
 			let ref = !space ? res : res[ space ]
 			for (let attrib of self.views[ space ] ) {
-				if ( !self._viewProxy && self.specs[ attrib ].Proxy && !self.specs[ attrib ]._viewProxy ) continue
+				if ( self.specs[ attrib ].Proxy && (!self._viewProxy || !self.specs[ attrib ]._viewProxy) ) continue
 
 				let value = self.specs[attrib].convert ? await self.specs[attrib].convert( obj[ attrib ] ) : obj[ attrib ]
 
